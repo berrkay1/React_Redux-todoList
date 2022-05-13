@@ -1,19 +1,24 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {useSelector,useDispatch} from 'react-redux';
-import {toggle,deleteItem} from '../redux/todos/todoSlice';
+import {toggle,deleteItem,getTodosAsync,toggleTodoAsync,removeTodoAsync} from '../redux/todos/todoSlice';
+import Error from './Error';
+import Loading from './Loading';
 
 
 function TodoList() {
+
+    
+
 
     const items = useSelector((state) => state.todos.items);
 
     const dispatch = useDispatch();
 
-    const handleDeleteItem = (id) => {
-        if(window.confirm('Are you sure ?')){
-            dispatch(deleteItem(id))
-        }
-    }
+    // const handleDeleteItem = (id) => {
+    //     if(window.confirm('Are you sure ?')){
+    //         dispatch(deleteItem(id))
+    //     }
+    // }
 
     const activeFilter = useSelector((state)=> state.todos.activeFilter);
     
@@ -29,6 +34,34 @@ function TodoList() {
     }else{
         filtered=items;
     }
+
+
+    useEffect(()=>{
+        dispatch(getTodosAsync());
+    },[dispatch]);
+
+    const isLoading = useSelector((state) => state.todos.isLoading);
+
+    const error = useSelector((state) => state.todos.error);
+
+    const handleDelete = async (id) => {
+        if(window.confirm('Are you sure ?')){
+            await dispatch(removeTodoAsync(id))
+        }
+        
+    }
+
+    const handleToggle = async (id,completed) => {
+        await dispatch(toggleTodoAsync({ id , data: {completed} }));
+    }
+
+    if(isLoading){
+        return <Loading/>
+    }
+
+    if(error){
+        return <Error message={error} />
+    }
     
     return (
         <ul className="todo-list">
@@ -37,9 +70,9 @@ function TodoList() {
                 <div className="view">
                     <input className="toggle" type="checkbox" 
                     checked={item.completed}
-                    onChange={()=>dispatch(toggle({id:item.id}))} />
+                    onChange={()=>handleToggle(item.id,!item.completed)} />
                     <label>{item.title}</label>
-                    <button onClick={()=>handleDeleteItem(item.id)}  className="destroy"></button>
+                    <button onClick={()=>handleDelete(item.id)}  className="destroy"></button>
                 </div>
             </li>
             ))}
